@@ -1,0 +1,12 @@
+40e2a70d964d067e41b19846994c0e7b *DESCRIPTION
+58314e581227cac01bff883cca999c11 *NAMESPACE
+dd1b6a84eb1df5c6759789656cb964b0 *R/ROSE.R
+4a3a3507dff73756359e3b6e3f4bfa21 *data/sefihy.rda
+f8fd489f13f694be83311df2df90755b *inst/CITATION
+c96dc69387a9255deac30db21aa055d6 *man/ROSE-package.Rd
+7c4d8803fd27e8a4cb9539351f33eab0 *man/ROSE.Rd
+eb50164a9efa5452446de0b56ef54d92 *man/ROSE.eval.Rd
+12d8c5eb0ec5b824f1d330c34b8c4917 *man/accuracy.meas.Rd
+7332c83ada1e79482db75314d814db2c *man/ovun.sample.Rd
+9cf8cc96bbc0b2d6d3857a87cccfc43b *man/roc.ROSE.Rd
+0b7ee58cee37c5049e3800c0e9ae17d3 *man/sefihy.Rd
