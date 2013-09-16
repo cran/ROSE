@@ -24,7 +24,7 @@ accuracy.meas <- function (response, predicted, threshold = 0.5)
     positives <- splitted[[as.character(labels[2])]]
     n.positives <- length(positives)
     
-    TP <- sum( positives>= threshold)
+    TP <- sum( positives >= threshold)
     FP <- sum( negatives >= threshold)
     TN <- sum( negatives < threshold)
     FN <- sum( positives < threshold)
@@ -33,12 +33,30 @@ accuracy.meas <- function (response, predicted, threshold = 0.5)
     RECALL <- TP/(TP+FN)
     F <- RECALL*PRECISION/(RECALL+PRECISION)
     
-    list(Call=match.call(), threshold=threshold, precision= PRECISION, recall = RECALL, F=F)
+    out <- list(Call=match.call(), threshold=threshold, precision= PRECISION, recall = RECALL, F=F)
+    class(out) <- "accuracy.meas"
+    out
 }
+
+####print method for accuracy measures
+print.accuracy.meas <- function(x, ...)
+{
+	cat("\n")
+	cat("Call: \n")
+	print(x$Call)
+	cat("\n")
+	cat("Examples are labelled as positive when predicted is greater than", x$threshold,"\n")
+	cat("\n")
+	cat( paste("precision: ", sprintf("%.3f",x$precision),"\n", sep="") )
+	cat( paste("recall: ", sprintf("%.3f",x$recall),"\n", sep="") )
+	cat( paste("F: ", sprintf("%.3f",x$F),"\n", sep="") )
+}
+
 
 ######################################################################
 
 #function that provides a formula with non tranformed variables only
+#this function is NOT exported
 adj.formula <- function(formula, data)
 {
 	if( missing(data) )
@@ -61,29 +79,76 @@ adj.formula <- function(formula, data)
 
 ######################################################################
 
-###ovun.sample main function
+#ovun.sample main function
 ovun.sample <- function(formula, data, method="both", N, p=0.5, subset, na.action, seed)
 {
 
 	if( missing(formula) ) stop("formula is reaquired.\n")
+	method <- match.arg(method, choices=c("both", "under", "over"))
 	if( !method%in%c("both", "over", "under") ) stop("Method must be 'both', 'over', or 'under'.\n")
 
 	Call <- match.call()
 	m <- match(c("formula", "data", "N", "p", "seed", "subset", "na.action"), names(Call), 0L)
 	Call1 <- Call[c(1L, m)]
 	Call1[[1L]] <- switch(method,
-								  both = ou.sampl,
-								  over = over.sampl,
-								  under = under.sampl
-								  )
+								 both = ou.sampl,
+								 over = over.sampl,
+								 under = under.sampl
+								 )
 	res <- eval(Call1)
 	mc  <- match.call()
 	mc$formula <- res$call$formula
-	list(Call=mc, method=method, data=res$data)	
+	out <- list(Call=mc, method=method, data=res$data)
+	class(out) <- "ovun.sample"
+	out
 }
 
-##Functions called from ovun.sample
+##print method for ovun.sample
+print.ovun.sample <- function(x, ...) 
+{
+	cat("\n")
+	cat("Call: \n")
+	print(x$Call)
+	Method <- switch(match.arg(x$method, choices=c("both", "under", "over")),
+							both="combination of over- and under-sampling",
+							under="undersampling",
+							over="oversampling"
+						 )
+	cat("\n")
+	cat("Data balanced by", Method,"\n")
+	cat("\n")
+	print(x$data)
+}
 
+###summary method for ovun.sample
+summary.ovun.sample <- function(object, ...) 
+{
+	out <- list( Call=object$Call, Summary=summary(object$data), method=object$method )
+	class(out) <- "summary.ovun.sample"
+	out
+}
+
+###print method for summary
+print.summary.ovun.sample <- function(x, ...) 
+{
+	cat("\n")
+	cat("Call: \n")
+	print(x$Call)
+	cat("\n")
+
+	Method <- switch(match.arg(x$method, choices=c("both", "under", "over")),
+							both="combination of over- and under-sampling",
+							under="undersampling",
+							over="oversampling"
+						 )
+
+	cat("Summary of data balanced by", Method ,"\n")
+	cat("\n")
+	print(x$Summary)
+}
+
+
+##Functions called from ovun.sample
 ####method="both"
 ou.sampl <- function(formula, data, subset, na.action, N, p=0.5, seed)
 {
@@ -150,7 +215,7 @@ ou.sampl <- function(formula, data, subset, na.action, N, p=0.5, seed)
 		if( !missing(seed) ) set.seed(seed)
 	#number of new minority class examples
 	n.mino.new <- sum(rbinom(N, 1, p))
-	#number of new majority class examples
+   #number of new majority class examples
 	n.majo.new <- N-n.mino.new
 
 	#identify the majority and minority class examples
@@ -174,7 +239,7 @@ ou.sampl <- function(formula, data, subset, na.action, N, p=0.5, seed)
 
 	if( !missing(data) & !flg.data )
 	{
-			#inserisco i nomi nel data frame già nell'ordine giusto
+			#put data frame names in the right order
 			colnames(data.out) <- colnames(data)[colnames(data)%in%cn]
 			rownames(data.out) <- 1:N
 
@@ -233,7 +298,7 @@ under.sampl <- function(formula, data, N, subset, na.action, p=0.5, seed)
 		mf$formula <- formula
 		}
 
-	mf.out=mf		
+	mf.out <- mf
 
 	m <- match(c("formula", "data", "subset", "na.action"), names(mf))
 	mf <- mf[c(1L, m)]
@@ -275,28 +340,38 @@ under.sampl <- function(formula, data, N, subset, na.action, p=0.5, seed)
 			warning(paste("Equal number of majority and minority class examples. Minority class label taken to be ", sprintf("%s", minoY),".\n",sep=""))
 
 	n.mino.new <- sum(y == minoY)
-	
+
+		if(!missing(seed)) set.seed(seed)
+
 		if( missing(N) )
 		{
 			if( p<0 | p>1 )  stop("p must be in the interval 0-1.\n")
-			if( p<n.mino.new/n ) stop("p must greater or equal than the actual proportion of minority class examples in the original sample.\n")
 
-			N <- round(n.mino.new/p)
-			n.majo <- N-n.mino.new
+	# Determination of N and n.majo in version 0-0.1
+	#		if( p<n.mino.new/n ) stop("p must greater or equal than the actual proportion of minority class examples in the original sample.\n")
+	#		N <- round(n.mino.new/p)
+	#		n.majo <- N-n.mino.new
+
+	# Determination of N and n.majo in version 0.0.2
+			if( p<n.mino.new/n ) warning("non-sensible to specify p smaller than the actual proportion of minority class examples in the original sample.\n")
+		#theoretical n.majo
+			n.majo <- round( (1-p)*n.mino.new/p )
+		#estimated n.majo
+			n.majo.new <- sum( rbinom(n.mino.new+n.majo, 1, 1-p) )
+		#final sample size
+			N <- n.majo.new + n.mino.new
 		}
 		else
 		{
 			if(N<n.mino.new)
 				stop("N must be greater or equal than the number of minority class examples.\n")
 			else
-				n.majo <- N-n.mino.new
+				#n.majo <- N-n.mino.new
+				n.majo.new <- N-n.mino.new
 		}
 
-
-		if(!missing(seed)) set.seed(seed)
-
-	id.majo.new <- sample(id.majo, n.majo, replace=FALSE)		
-	n.majo.new  <- length(id.majo.new)
+	id.majo.new <- sample(id.majo, n.majo.new, replace=FALSE)
+#	n.majo.new  <- length(id.majo.new)
 
 # create final data matrix 
 	#create  y
@@ -313,7 +388,7 @@ under.sampl <- function(formula, data, N, subset, na.action, p=0.5, seed)
 
 	if( !missing(data) & !flg.data)
 	{
-			#inserisco i nomi nel data frame già nell'ordine giusto
+			#put data frame names in the right order
 			colnames(data.out) <- colnames(data)[colnames(data)%in%cn]
 			rownames(data.out) <- 1:N
 
@@ -372,7 +447,7 @@ over.sampl <- function(formula, data, subset, na.action, N, p=0.5, seed)
 		mf$formula <- formula
 		}
 
-	mf.out=mf		
+	mf.out <- mf
 
 	m <- match(c("formula", "data", "subset", "na.action"), names(mf))
 	mf <- mf[c(1L, m)]
@@ -403,8 +478,8 @@ over.sampl <- function(formula, data, subset, na.action, N, p=0.5, seed)
 
 
 #identify which is the label associated to the majority and minority classes
-	majoY  <- levels(y)[which.max(T)]
-	minoY  <- levels(y)[which.min(T)]
+	majoY <- levels(y)[which.max(T)]
+	minoY <- levels(y)[which.min(T)]
 
 	id.mino <- which( y == minoY )
 	id.majo <- which( y == majoY )
@@ -412,17 +487,28 @@ over.sampl <- function(formula, data, subset, na.action, N, p=0.5, seed)
 # check if one class is actually prevalent
 	if(length(id.mino)==length(id.majo))  warning(paste("Equal number of	majority and minority class examples. Minority class label taken to be ", sprintf("%s", minoY),".\n",sep=""))
 
-	n.majo  <- sum(y == majoY)
+	n.majo <- sum(y == majoY)
 	n.mino <- n-n.majo
 #	flg.mess <- 0
+
+	if(!missing(seed)) set.seed(seed)
 
 	if( missing(N) )
 	{
 		if( p<0 | p>1 )  stop("p must be in the interval 0-1.\n")
-		if( p<n.mino/n ) stop("p must greater or equal than the actual proportion of minority class examples in the original sample.\n")
+	# Determination of N and n.mino in version 0-0.1
+	#	if( p<n.mino/n ) stop("p must greater or equal than the actual proportion of minority class examples in the original sample.\n")
+	#	N <- round(n.majo/(1-p))
+	#	n.mino.new <- N-n.majo
 
-		N <- round(n.majo/(1-p))
-		n.mino.new <- N-n.majo
+	# Determination of N and n.mino in version 0.0.2
+			if( p<n.mino/n ) warning("non-sensible to specify p smaller than the actual proportion of minority class examples in the original sample.\n")
+		#theoretical n.mino
+			n.mino <- round( p*n.majo/(1-p) )
+		#estimated n.mino
+			n.mino.new <- sum( rbinom(n.mino+n.majo, 1, p) )
+		#final sample size
+			N <- n.majo + n.mino.new
 	}
 	else
 	{
@@ -432,8 +518,6 @@ over.sampl <- function(formula, data, subset, na.action, N, p=0.5, seed)
 			n.mino.new <- N-n.majo
 	}
 
-	if(!missing(seed)) set.seed(seed)
-	
 	id.mino.new <- sample(id.mino, n.mino.new, replace=TRUE)
 
 
@@ -452,11 +536,11 @@ over.sampl <- function(formula, data, subset, na.action, N, p=0.5, seed)
 
 	if( !missing(data) & !flg.data)
 	{
-			#inserisco i nomi nel data frame già nell'ordine giusto
+			#put data frame names in the right order
 			colnames(data.out) <- colnames(data)[colnames(data)%in%cn]
 			rownames(data.out) <- 1:N
 
-			#colloco la y
+			#insert y in the right place
 			indY <- colnames(data.out)==cn[1]
 			data.out[, indY] <- ynew
 
@@ -533,15 +617,12 @@ roc.curve <- function(response, predicted, plotit=TRUE, add.roc=FALSE, n.thresho
 		obj.roc.curve
 }
 
-
-##internal
 ###print method for roc curve
 print.roc.curve <- function(x, ...) 
 {
-	if( !is.null(x$auc) ) cat( paste("Area under the curve (AUC): ", sprintf("%.3f",x$auc),".\n", sep="") )
+	if( !is.null(x$auc) ) cat( paste("Area under the curve (AUC): ", sprintf("%.3f",x$auc),"\n", sep="") )
 }
 
-##internal
 ###summary method for roc curve
 summary.roc.curve <- function(object, ...) 
 {
@@ -551,8 +632,6 @@ summary.roc.curve <- function(object, ...)
 	LST
 }
 
-
-##internal
 ###print method for summary
 print.summary.roc.curve <- function(x, ...) 
 {
@@ -571,22 +650,18 @@ print.summary.roc.curve <- function(x, ...)
 	cat("\n")
 }
 
-##internal
 ###compute specificity and sensibility
 f.roc <- function(x, positives, negatives, n.positives, n.negatives)
 {
 	c( sum( negatives>x )/n.negatives, sum( positives>=x )/n.positives )
 }
 
-
-##internalsefihy.train$cls
 ###plot the ROC curve with some default parameters in plot()
 plot.roc.curve <- function(x, y, ...)
 {
 	plot.roc.inner(x, y, ...)
 }
 
-##internal
 ###plot the ROC curve with some default parameters in plot()
 plot.roc.inner <- function(x, y, main="ROC curve", xlab="False positive rate", ylab="True positive rate", xlim=c(0,1), ylim=c(0,1), col=1, type="l", lwd=2, ...)
 {
@@ -594,190 +669,222 @@ plot.roc.inner <- function(x, y, main="ROC curve", xlab="False positive rate", y
 }
 
 ######################################################################
+##ROSE and associated functions
 
-##ROSE and associated internal functions
-
-# function to generate synthetic real data 
-rose.real <- function(X, hmult=1, n, q = NCOL(X))
+# function to generate synthetic real data
+##This function is NOT exported
+rose.real <- function(X, hmult=1, n, q = NCOL(X), ids.class, ids.generation)
 {
-	X <- data.matrix(X)
-	n.new <- nrow(X)
-	cons.kernel <- (4/(3*n))^(1/5)
-	h	<-	hmult*cons.kernel*diag(apply(X, 2, sd), q)
-	cholH <- sqrt(h)  
 
-	Xnew.num <- matrix(rnorm(n.new*q), n.new, q)%*%cholH
-	Xnew.num <- data.matrix(Xnew.num + X)
-	Xnew.num
+        X <- data.matrix(X)
+        n.new <- length(ids.generation)
+        cons.kernel <- (4/((q+2)*n))^(1/(q+4))
+        H <- hmult*cons.kernel*diag(apply(X[ids.class,], 2, sd), q)
+
+        Xnew.num <- matrix(rnorm(n.new*q), n.new, q)%*%H
+        Xnew.num <- data.matrix(Xnew.num + X[ids.generation,])
+        Xnew.num
 }
 
 ##ROSE
 ROSE <- function(formula, data, N, p=0.5, hmult.majo=1, hmult.mino=1, subset, na.action, seed)
 {
-		if( missing(formula) ) stop("formula is required\n")
-	formula <- adj.formula(formula, data)
-	mf <- match.call()
+                if( missing(formula) ) stop("formula is required\n")
+        formula <- adj.formula(formula, data)
+        mf <- match.call()
 
-	flg.data <- 0
-		if( !missing(data) )
-		{
-			if( any((all.names(formula, unique=TRUE)%in%c("$","[","]"))==T) ) 
-				flg.data <- 1 
+        flg.data <- 0
+                if( !missing(data) )
+                {
+                        if( any((all.names(formula, unique=TRUE)%in%c("$","[","]"))==T) )
+                                flg.data <- 1
 
-			if( !is.environment(data) & !is.list(data) )  
-			{
-				data <- as.data.frame(data)			
-				mf$data <- data
-			}
-			else
-				flg.data <- 1
-		}
+                        if( !is.environment(data) & !is.list(data) ) 
+                        {
+                                data <- as.data.frame(data)                    
+                                mf$data <- data
+                        }
+                        else
+                                flg.data <- 1
+                }
 
-		if(mf$formula[[3]]!=".")
-		{
-			if(eval(mf$formula)!=formula) warning("Transformations of variables are not allowed in ROSE.\n New data have been generated by using non-transformed variables only.\n See help(ROSE) for details \n")
-		mf$formula <- formula
-		}
+                if(mf$formula[[3]]!=".")
+                {
+                        if(eval(mf$formula)!=formula) warning("Transformations of variables are not allowed in ROSE.\n New data have been generated by using non-transformed variables only.\n See help(ROSE) for details \n")
+                mf$formula <- formula
+                }
 
-	mf.out=mf		
+        mf.out <- mf              
 
-	m <- match(c("formula", "data", "subset", "na.action"), names(mf), 0L)
-	mf <- mf[c(1L, m)]
-	mf[[1L]] <- as.name("model.frame")
+        m <- match(c("formula", "data", "subset", "na.action"), names(mf), 0L)
+        mf <- mf[c(1L, m)]
+        mf[[1L]] <- as.name("model.frame")
 
-	mf <- eval(mf, parent.frame())  
-	cn <- rownames( attributes( attributes(mf)$terms )$factors )
-	data.st <- data.frame(mf)
-	y <- data.st[, 1]       
-	X <- data.st[,-1]		 
+        mf <- eval(mf, parent.frame()) 
+        cn <- rownames( attributes( attributes(mf)$terms )$factors )
+        data.st <- data.frame(mf)
+        y <- data.st[, 1]      
+        X <- data.st[,-1]               
 
-	n <- length(y)     
-	d <- NCOL(X)
+        n <- length(y)    
+        d <- NCOL(X)
 
-	classy <- class(y)
-	y <- factor(y)
-	T <- table(y)
+        classy <- class(y)
+        y <- factor(y)
+        T <- table(y)
 
 
 # checks
-	# sample size: must be larger than 2 
-	if(n<2) stop("Too few observations.\n")
+        # sample size: must be larger than 2
+        if(n<2) stop("Too few observations.\n")
 
-	# variables: must be numeric, integer or factor
-	cls <- sapply(as.data.frame(X), class)
+        # variables: must be numeric, integer or factor
+        cls <- sapply(as.data.frame(X), class)
 
-	if( any( is.na( pmatch(cls, c( "numeric","integer","factor"), duplicates.ok = TRUE ) ) ) ) stop("The current implementation of ROSE handles only continuous and categorical variables.\n")
+        if( any( is.na( pmatch(cls, c( "numeric","integer","factor"), duplicates.ok = TRUE ) ) ) ) stop("The current implementation of ROSE handles only continuous and categorical variables.\n")
 
-	# response variable: must be binary with at least two observations/class	
-	if( length(T) > 2 ) stop("The response variable must have 2 levels.\n")
-	if( any(T < 2) ) stop("ROSE needs at least two majority and two minority class examples.\n")
-	# per me non serve GM 12/12/12 #if( any(T==0) | any(T==n) ) stop("There are no majority/minority class examples")
-	 
-	 # keep track of class of X and make it data.frame
-#	 classX <- class(X) 
-	 X <- data.frame(X)
+        # response variable: must be binary with at least two observations/class       
+        if( length(T) > 2 ) stop("The response variable must have 2 levels.\n")
+        if( any(T < 2) ) stop("ROSE needs at least two majority and two minority class examples.\n")
+        
+         # keep track of class of X and make it data.frame
+#        classX <- class(X)
+         X <- data.frame(X)
 
-	 # controlli su parametri input per generare nuovi dati
-	if( p<0 | p>1 ) stop("p must be in the interval 0-1.\n") 
-	if(missing(N)) N <- n
-	if(!missing(seed)) set.seed(seed)
+        # controlli su parametri input per generare nuovi dati
+        if( p<0 | p>1 ) stop("p must be in the interval 0-1.\n")
+        if(missing(N)) N <- n
+        if(!missing(seed)) set.seed(seed)
 
-# class identification
-	majoY  <- levels(y)[ which.max(T)]
-	minoY  <- levels(y)[-which.max(T)]
+			# class identification
+        majoY  <- levels(y)[ which.max(T)]
+        minoY  <- levels(y)[-which.max(T)]
 
-	id.mino <- which( y == minoY )
-	id.majo <- which( y == majoY )
+        id.mino <- which( y == minoY )
+        id.majo <- which( y == majoY )
 
-  	# check if one class is actually prevalent
-	if(length(id.mino)==length(id.majo))  warning(paste("Equal number of majority  and minority class examples. Minority class label taken  to be ", sprintf("%s", minoY),".\n",sep=""))
+        # check if one class is actually prevalent
+        if(length(id.mino)==length(id.majo))  warning(paste("Equal number of majority  and minority class examples. Minority class label taken  to be ", sprintf("%s", minoY),".\n",sep=""))
 
-#number of examples to be generated
-	n.mino.new <- sum(rbinom(N, 1, p))
-	n.majo.new <- N-n.mino.new
+			#number of examples to be generated
+        n.mino.new <- sum(rbinom(N, 1, p))
+        n.majo.new <- N-n.mino.new
 
-#select generators id
-	id.majo.new <- sample(id.majo, n.majo.new, replace=TRUE)		
-	id.mino.new <- sample(id.mino, n.mino.new, replace=TRUE)		
+			#select generators id
+        id.majo.new <- sample(id.majo, n.majo.new, replace=TRUE)               
+        id.mino.new <- sample(id.mino, n.mino.new, replace=TRUE)               
 
-## initialize new data
-		Xnew <- data.frame(X[c(id.majo.new, id.mino.new),]) 
+			## initialize new data
+                Xnew <- data.frame(X[c(id.majo.new, id.mino.new),])
 
-######che dici, invece che come le righe di codice su, togliamo id.fact e d.fact che tanto poi non servono più?
-#determine which and how many variables are factors
-	id.num  <- which(cls=="numeric" | cls=="interger")
-	d.num   <- d-length( which(cls=="factor") )
+			#determine which and how many variables are factors
+        id.num  <- which(cls=="numeric" | cls=="integer")
+        d.num   <- d-length( which(cls=="factor") )
 
-# generazione repliche da variabili numeriche se ce ne sono	
-	if(d.num > 0)   
-	{
-		Xnew[1:n.majo.new, id.num] <- rose.real(X[id.majo.new, id.num], hmult=hmult.majo, n=length(id.majo), q=d.num ) 
-		Xnew[(n.majo.new+1):N, id.num] <- rose.real(X[id.mino.new, id.num], hmult=hmult.mino, n=length(id.mino), q=d.num ) 
-	} 
+		  # generate clones of continuous variables
+        if(d.num > 0)  
+        {
+                Xnew[1:n.majo.new, id.num] <- rose.real(X[,id.num], hmult=hmult.majo, n=length(id.majo), q=d.num, ids.class=id.majo, ids.generation=id.majo.new)
+                Xnew[(n.majo.new+1):N, id.num] <- rose.real(X[,id.num], hmult=hmult.mino, n=length(id.mino), q=d.num, ids.class=id.mino, ids.generation=id.mino.new)
+        }
 
-# create final data matrix 
-	#create  y
-	if( classy%in%c("character", "integer", "numeric") )
-		ynew <- as.vector(c(rep(majoY, n.majo.new), rep(minoY, n.mino.new)), mode=classy)
-	if( classy=="factor" )  
-		ynew <- factor(c(rep(majoY, n.majo.new), rep(minoY, n.mino.new)), levels=c(majoY, minoY))
+			# create final data matrix
+        #create  y
+        if( classy%in%c("character", "integer", "numeric") )
+                ynew <- as.vector(c(rep(majoY, n.majo.new), rep(minoY, n.mino.new)), mode=classy)
+        if( classy=="factor" ) 
+                ynew <- factor(c(rep(majoY, n.majo.new), rep(minoY, n.mino.new)), levels=c(majoY, minoY))
 
-	data.out <- data.frame(ynew, Xnew)
-	rownames(data.out) <- 1:N
+        data.out <- data.frame(ynew, Xnew)
+        rownames(data.out) <- 1:N
 
-	#re-position columns
-	if( !missing(data) & !flg.data )
-	{
-			#inserisco i nomi nel data frame già nell'ordine giusto
-			colnames(data.out) <- colnames(data)[colnames(data)%in%cn]
-			rownames(data.out) <- 1:N
+        #re-position columns
+        if( !missing(data) & flg.data )#before: !flg.data
+        {
+               			#put data frame names in the right order
+                        colnames(data.out) <- colnames(data)[colnames(data)%in%cn]
+                        rownames(data.out) <- 1:N
 
-			#colloco la y
-			indY <- colnames(data.out)==cn[1]
-			data.out[, indY] <- ynew
+                        #insert y
+                        indY <- colnames(data.out)==cn[1]
+                        data.out[, indY] <- ynew
 
-			#see wether the order of the variables in formula is the same as in data. If no, swap columns according to the order in data
-			swap.col <- order( pmatch( cn[-1], colnames(data.out)[!indY] ) )
-			data.out[,!indY] <- Xnew[, (1:d)[swap.col] ]
-	}
-	else
-	{
-		if( length(cn)-1 < d )
-			colnames(data.out) <- c(cn[1], colnames(X))
-		else 
-			colnames(data.out) <- cn
-	}
+                        #see wether the order of the variables in formula is the same as in data. If no, swap columns according to the order in data
+                        swap.col <- order( pmatch( cn[-1], colnames(data.out)[!indY] ) )
+                        data.out[,!indY] <- Xnew[, (1:d)[swap.col] ]
+        }
+        else
+        {
+                if( length(cn)-1 < d )
+                        colnames(data.out) <- c(cn[1], colnames(X))
+                else
+                        colnames(data.out) <- cn
+        }
 
-	if(formula[[3]]!=".")
-		list(Call=mf.out, data=data.out)
-	else
-		list(Call=match.call(), data=data.out)
+        if(formula[[3]]!=".")
+				out <- list(Call=mf.out, method="ROSE", data=data.out)
+        else
+				out <- list(Call=match.call(), method="ROSE", data=data.out)
+
+	class(out) <- "ROSE"
+	out
 }
+
+##print method for ROSE
+print.ROSE <- function(x, ...) 
+{
+	cat("\n")
+	cat("Call: \n")
+	print(x$Call)
+	cat("\n")
+	cat("Data balanced by", x$method,"\n")
+	cat("\n")
+	print(x$data)
+}
+
+###summary method for ROSE
+summary.ROSE <- function(object, ...) 
+{
+	out <- list( Call=object$Call, Summary=summary(object$data) )
+	class(out) <- "summary.ROSE"
+	out
+}
+
+###print method for summary
+print.summary.ROSE <- function(x, ...) 
+{
+	cat("\n")
+	cat("Call: \n")
+	print(x$Call)
+	cat("\n")
+
+	cat("Summary of data balanced by ROSE","\n")
+	cat("\n")
+	print(x$Summary)
+}
+
+
 
 ######################################################################
+##ROSE.eval and associated functions
 
-##ROSE.eval and associated internal functions
-
-##copy specified variables to the desired environment
-copy2env <- function(nms.in.env, data2env, env)
-{
-	if( length(nms.in.env)>1 )
-		mapply( function(x,y) assign(x, y, env), nms.in.env, data2env )
-	else
-		assign(nms.in.env, data2env, env)
-}
-
-
-##ROSE.eval
-ROSE.eval <- function(formula, data, learner, acc.measure="auc", extr.pred=NULL, method.assess="holdout", B=100, control.rose=list(), control.learner=list(), control.predict=list(), control.accuracy=list(), trace=FALSE, subset, na.action, seed) 
+ROSE.eval <- function(formula, data, learner, acc.measure="auc", extr.pred=NULL, method.assess="holdout", K=1, B=100, control.rose=list(), control.learner=list(), control.predict=list(), control.accuracy=list(), trace=FALSE, subset, na.action, seed) 
 {
 		#check arguments: formula and learner are mandatory 
 		if( missing(formula) ) stop("A formula is required.\n")
 		if( missing( learner ) ) stop("Argument 'learner' is missing, with no default. \n")
 
+		#check if provided learner is "standard" in the sense that it has an associated predict method with arguments "object" and "newdata"
+		func.name <- as.character(substitute(learner))
+		if( any( methods(class=func.name)==paste("predict.",func.name,sep="") ) )
+			flg.learner <- 1
+		else
+			flg.learner <- 0
+
 	mc <- match.call()
+
 	formula.env <- attr(formula,".Environment")
-    
+
 	varnames.func <- all.vars(formula, functions=TRUE)
 	varnames <- all.vars(formula, functions=FALSE)
 
@@ -793,169 +900,214 @@ ROSE.eval <- function(formula, data, learner, acc.measure="auc", extr.pred=NULL,
 	
 		##this is the case for variables not contained in a data frame in formula.env
 		if(is.null(name.data))
-			name.data <- varnames#all.vars(formula)
+			name.data <- varnames
 
 	###store original data.frame/variables in formula.env
 	data.orig <- sapply(name.data, function(x) get(x, envir=formula.env) )
-###end
+	cn.order.orig <- attributes(data.orig)$dimnames[[1]]
+	###end
 
-###create new environment for ROSE.eval and store the data.frame/variables in formula.env
-	env.rose.eval <- new.env()
-	sapply(name.data, function(x) assign(x, get( ls(envir=formula.env)[which(ls(envir=formula.env)==x)] ), envir=env.rose.eval) )
-
-###hereafter formula will be evaluated in env.rose.eval 
-	attr(formula, ".Environment") <- env.rose.eval
-
-###keep formula unchanged for the learner
+	###keep formula unchanged for the learner
 	formula.learn <- formula
-###drop trasformations etc from formula to provide a nice formula to ROSE
+	###drop trasformations etc from formula to provide a nice formula to ROSE
 	formula.rose <- adj.formula(formula, data)
 
-###create data set for ROSE and prediction
+	###create data set for ROSE and prediction
 	mc$formula <- formula.rose
 	m <- match(c("formula", "data", "na.action", "subset"), names(mc), 0L)
 	mf <- mc[c(1L, m)]
 	mf[[1L]] <- as.name("model.frame")
-	mf <- eval(mf, parent.frame())  
+	mf <- eval(mf, parent.frame())
+	cn <- rownames( attributes( attributes(mf)$terms )$factors )
 	data.st <- data.frame(mf)
-	y <- data.st[,1]          
+	y <- data.st[,1]
 
 		if( any( varnames.func%in%c("$")) ) 
 			colnames(data.st) <- gsub(paste(name.data, ".", sep=""), "", colnames(data.st))
 
 	##create new formula for ROSE with the right environment
-	formula.rose <- formula(data.st, envir=env.rose.eval)
-###end 
+	formula.rose <- formula(data.st)
+	###end 
+
+		#right order of columns as specified in data
+		if( !missing(data) )
+			data.st <- data.st[cn.order.orig]
 
 	#check accuracy estimator
-	method.assess <- match.arg(method.assess, choices=c("holdout", "L1OCV", "BOOT"))
-	if(!method.assess %in% c("holdout", "L1OCV","BOOT") ) stop("Method for model assessment must be one among 'holdout' 'L1OCV' or 'BOOT'.\n") 
+	method.assess <- match.arg(method.assess, choices=c("holdout", "LKOCV", "BOOT"))
+		if(!method.assess %in% c("holdout", "LKOCV", "BOOT") ) stop("Method for model assessment must be one among 'holdout', 'BOOT' or 'LKOCV'.\n") 
 	
 	#check accuracy measure 
 	acc.measure <- match.arg(acc.measure, choices=c("auc", "precision", "recall", "F"))
-	if(!acc.measure %in% c("auc", "precision", "recall", "F") ) stop("Accuracy measure must be one among 'auc' 'precision', 'recall' or 'F'.\n") 
-	if(acc.measure=="auc")  fun.accuracy <- roc.curve else fun.accuracy <- accuracy.meas
-	#fun.accuracy<-get(fun.accuracy)
-	pos.accuracy<- ifelse((acc.measure=="auc"|acc.measure=="recall"), 2, ifelse((acc.measure=="precision"),1, 3))
-	
-	method.assess.inn <- method.assess 
-	if(!missing(seed)) set.seed(seed)
-
-	if(trace)
-	{
-		ind <- ifelse( B<50, 1, ifelse( B<500, 10, 100 ) )
-		cat("Iteration:", "\n")
-	}	
-
-		if( method.assess.inn =="holdout") 
+		if(!acc.measure %in% c("auc", "precision", "recall", "F") ) stop("Accuracy measure must be one among 'auc' 'precision', 'recall' or 'F'.\n") 
+		if(acc.measure=="auc")
 		{
-			method.assess.inn <- "BOOT"   
-			B <- 1		
+			fun.accuracy <- roc.curve 
+			##as default, do not plot the roc curve in ROSE.eval when the user do not want it
+			if( is.null(names(control.accuracy)) ) control.accuracy <- c(control.accuracy, list("plotit"=FALSE))
+			if( !names(control.accuracy)=="plotit" ) control.accuracy <- c(control.accuracy, list("plotit"=FALSE))
+		}
+		else 
+		{
+			fun.accuracy <- accuracy.meas
+		}
+
+
+	pos.accuracy <- match(acc.measure,c("auc","precision", "recall", "F")) + 1
+	method.assess.inn <- method.assess
+
+		if(!missing(seed)) set.seed(seed)
+
+		if(trace)
+		{
+			ind <- ifelse( B<50, 1, ifelse( B<500, 10, 100 ) )
+			cat("Iteration:", "\n")
+		}	
+
+		if( method.assess.inn =="holdout" )
+		{
+			method.assess.inn <- "BOOT"
+			B <- 1
 		}
 
 		if( method.assess.inn=="BOOT" )
 		{
 			if(trace) max.ind <- floor(B/ind)*ind
 			acc.vec <- vector(mode="numeric", length=B) 
-			for(i in 1:B)
+
+			if( flg.learner )
 			{
-				##put the right data into env.rose.eval to interpret formula.rose (maybe useless but should ensure consistency )
-				copy2env(name.data, data.st, env.rose.eval)
-
-				data.rose <- do.call(ROSE, c(list(formula=formula.rose, data=data.st), control.rose))$data
-
-				##put the right data into env.rose.eval to interpret formula.learn (maybe useless but should ensure consistency )
-				copy2env(name.data, data.rose, env.rose.eval)
-				fit <- do.call(learner, c(list(formula=formula.learn, data=data.rose), control.learner))
-
-				##put the right data into env.rose.eval to ensure a coherent prediction
-				copy2env(name.data, data.st, env.rose.eval)
-				
-				pred <- do.call(predict, c(list(object=fit, newdata=data.st), control.predict))
-				if(!is.null(extr.pred)) pred <- extr.pred(pred)
-				acc.vec[i] <- do.call(fun.accuracy, c(list(response=y, predicted=pred), control.accuracy))[[pos.accuracy]]
-				if(trace) if(i %% ind == 0) {if( i!=max.ind ) cat(i, ", ", sep="") else cat(i, "\n", sep="")}  
+				#functions with "standard" behaviour
+				for(i in 1:B)
+				{
+					data.rose <- do.call(ROSE, c(list(formula=formula.rose, data=data.st), control.rose))$data
+					fit <- do.call(learner, c(list(formula=formula.learn, data=data.rose), control.learner))
+					pred <- do.call(predict, c(list(object=fit, newdata=data.st), control.predict))
+						if(!is.null(extr.pred)) pred <- extr.pred(pred)
+					acc.vec[i] <- do.call(fun.accuracy, c(list(response=y, predicted=pred), control.accuracy))[[pos.accuracy]]
+						if(trace) if(i %% ind == 0) {if( i!=max.ind ) cat(i, ", ", sep="") else cat(i, "\n", sep="")}  
+				}
 			}
-		
+			else
+			{
+				#user defined functions with "non-standard" behaviour
+				for(i in 1:B)
+				{
+					data.rose <- do.call(ROSE, c(list(formula=formula.rose, data=data.st), control.rose))$data
+					pred <- do.call(learner, c(list(data=data.rose, newdata=data.st[,cn[-1]]), control.learner))
+					acc.vec[i] <- do.call(fun.accuracy, c(list(response=y, predicted=pred), control.accuracy))[[pos.accuracy]]
+						if(trace) if(i %% ind == 0) {if( i!=max.ind ) cat(i, ", ", sep="") else cat(i, "\n", sep="")}  
+				}
+			}
 		}
-		else 
-		if( method.assess.inn=="L1OCV")
+		else
 		{
-			pred <- numeric(0)
-			B <- length(data.st[,1])		
-			if(trace)	max.ind <- floor(B/ind)*ind
-			
-			for(i in 1:B)
+			pred <- y.cp <- numeric(0)
+
+				if(trace)	max.ind <- floor(B/ind)*ind
+			#n.obs to leave out
+			if(K%%1!=0) stop("Leave K out CV: K must be an integer\n")
+			n.g <- K
+
+			#number of subsets
+			if(length(data.st[,1])%%n.g==0)
 			{
-				##put the right data into env.rose.eval to interpret formula.rose (maybe useless but should ensure consistency )
-				copy2env(name.data, data.st[-i,], env.rose.eval)
-				
-				data.rose <- do.call(ROSE, c(list(formula=formula.rose, data=data.st[-i,]), control.rose))$data		
-
-				##put the right data into env.rose.eval to interpret formula.learn (maybe useless but should ensure consistency )
-				copy2env(name.data, data.rose, env.rose.eval)
-
-				fit  <- do.call(learner, c(list(formula=formula.learn, data=data.rose), control.learner))		
-
-				##put the right data into env.rose.eval to ensure a coherent prediction
-				copy2env(name.data, data.st[i,], env.rose.eval)
-
-				predi <- do.call(predict, c(list(object=fit, newdata=data.st[i,]), control.predict))
-				
-				if(!is.null(extr.pred)) predi <- extr.pred(predi)
-				pred <- c(pred,predi)
-				if(trace) if(i %% ind == 0) {if( i!=max.ind ) cat(i, ", ", sep="") else cat(i, "\n", sep="")}  
+				K <- length(data.st[,1])/n.g
+				ind.g <- sample( rep(1:K, n.g) )
 			}
-			acc.vec <- do.call(fun.accuracy, c(list(response=y, predicted=pred), control.accuracy))[[pos.accuracy]]
+			else
+			{
+				K <- floor(length(data.st[,1])/n.g) + 1
+				n.g.remain <- length(data.st[,1])-floor(length(data.st[,1])/n.g)*n.g
+					message(paste("\nLeave K out CV: the sample size is not a multiple of K. \nThe routine has automatically created", K-1, "subsets of size", n.g, "and one subset of size", n.g.remain,"."))
+				ind.g <- sample( c(rep(1:(K-1), n.g), rep(K,n.g.remain) ) )
+			}
+
+			B <- K
+
+
+			if( flg.learner )
+			{
+				#functions with "standard" behaviour
+				for(i in 1:B)
+				{
+					data.rose <- do.call(ROSE, c(list(formula=formula.rose, data=data.st[ -which(ind.g==i) ,]), control.rose))$data
+					fit <- do.call(learner, c(list(formula=formula.learn, data=data.rose), control.learner))
+					predi <- do.call(predict, c(list(object=fit, newdata=data.st[ which(ind.g==i) ,]), control.predict))
+						if(!is.null(extr.pred)) predi <- extr.pred(predi)
+					pred <- c(pred,predi)
+						if(trace) if(i %% ind == 0) {if( i!=max.ind ) cat(i, ", ", sep="") else cat(i, "\n", sep="")}  
+					y.cp <- c(y.cp,y[which(ind.g==i)])
+				}
+				acc.vec <- do.call(fun.accuracy, c(list(response=y.cp, predicted=pred), control.accuracy))[[pos.accuracy]]
+			}
+			else
+			{
+				#user defined functions with "non-standard" behaviour
+				for(i in 1:B)
+				{
+					data.rose <- do.call(ROSE, c(list(formula=formula.rose, data=data.st[ -which(ind.g==i) ,]), control.rose))$data
+					predi <- do.call(learner, c(list(data=data.rose, newdata=data.st[which(ind.g==i),cn[-1]]), control.learner))
+					pred <- c(pred,predi)
+						if(trace) if(i %% ind == 0) {if( i!=max.ind ) cat(i, ", ", sep="") else cat(i, "\n", sep="")}  
+					y.cp <- c(y.cp,y[which(ind.g==i)])
+				}
+				acc.vec <- do.call(fun.accuracy, c(list(response=y.cp, predicted=pred), control.accuracy))[[pos.accuracy]]
+			}
 		}
 
-      out <- list(Call = match.call(), method=method.assess, measure = acc.measure, acc = acc.vec)
-	   class(out) <- "ROSE.eval"
+		out <- list(Call = match.call(), method=method.assess, measure = acc.measure, acc = acc.vec)
+		class(out) <- "ROSE.eval"
 		out
 }
 
-##internal
-###print method for ROSE.eval
+##print method for ROSE.eval
 print.ROSE.eval <- function(x, ...) 
 {
-        if (x$method =="BOOT") method <- "Bootstrap"
-        if (x$method =="L1OCV") method <- "Leave-1-out cross-validation"
-        if (x$method =="holdout") method <- "Holdout"
-        cat("\n")
-	     if (method == "Bootstrap") cat( paste(method, " estimate of ", x$measure, " on ", length(x$acc), " samples:\n", sep="") ) else cat( paste(method, " estimate of ", x$measure, ":\n", sep="") )
-        cat("\n")		  
-		  print(x$acc)
+		if (x$method =="BOOT")		method <- "Bootstrap"
+		if (x$method =="LKOCV")		method <- "Leave K out cross-validation"
+		if (x$method =="holdout")	method <- "Holdout"
+	cat("\n")
+	cat("Call: \n")
+	print(x$Call)
+	cat("\n")
+
+	if (method == "Bootstrap")
+		cat( paste(method, " estimate of ", x$measure, " on ", length(x$acc), " samples: ", sep="") )
+	else
+		cat( paste(method, " estimate of ", x$measure, ": ", sep="") )
+
+	cat(sprintf("%.3f",x$acc),"\n")
 }
 
-##internal
 ###summary method for ROSE.eval
 summary.ROSE.eval <- function(object, ...) 
 {
         acc<-object$acc
-        if (length(acc) > 1) acc<-summary(acc) 
-        LST <- list( call=object$Call, method=object$method, measure=object
-$measure, acc=acc ) 
+        if (length(acc) > 1) acc <- summary(acc) 
+        LST <- list( call=object$Call, method=object$method, measure=object$measure, acc=acc ) 
         class(LST) <- "summary.ROSE.eval"
         LST
 }
 
-
-##internal
 ###print method for summary
 print.summary.ROSE.eval <- function(x, ...) 
 {
-        cat("\n")
-        cat("Call: \n")
-        print(x$call)
-        cat("\n")
-        
-        if (x$method =="BOOT") method <- "Bootstrap"
-        if (x$method =="L1OCV") method <- "Leave-1-out cross-validation"
-        if (x$method =="holdout") method <- "Holdout"
-        cat( paste(method, " estimate of ", x$measure, ":\n", sep="") )
-        #cat(round(x$acc, digits=3),"\n")
-        print(x$acc)
-        cat("\n")
-        }
+	cat("\n")
+	cat("Call: \n")
+	print(x$call)
+	cat("\n")
 
-######################################################################
+		if (x$method =="BOOT") method <- "Bootstrap"
+		if (x$method =="LKOCV") method <- "Leave K out cross-validation"
+		if (x$method =="holdout") method <- "Holdout"
+
+		if(x$method !="BOOT")
+			cat( paste(method, " estimate of ", x$measure, ": ", sprintf("%.3f",x$acc),"\n", sep="") )
+		else
+		{
+			cat( "Summary of bootstrap distribution of auc: \n" )
+			print(x$acc)
+			cat("\n")
+		}
+}

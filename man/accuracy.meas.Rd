@@ -19,8 +19,7 @@ A vector of responses containing two classes to be used to evaluate prediction a
 It can be of class \code{"factor"}, \code{"numeric"} or \code{"character"}.
 }
 	\item{predicted}{
-A vector containing a prediction for each observation. This can be of class \code{"factor"} if the predicted label classes are provided 
-or \code{"numeric"} for the probabilities of the rare class (or a monotonic function of them).
+A vector containing a prediction for each observation. This can be of class \code{"factor"} or \code{"character"} if the predicted label classes are provided or \code{"numeric"} for the probabilities of the rare class (or a monotonic function of them).
 }
 	\item{threshold}{
 When \code{predicted} is of class \code{numeric}, it defines the probability threshold to classify an example as positive. 
@@ -48,7 +47,7 @@ The F measure is the harmonic average between precision and recall:
 }
 
 \value{
-A list with elements
+The value is an object of class \code{accuracy.meas} which has components
   \item{Call}{The matched call.}
   \item{threshold}{The selected threshold.}
   \item{precision}{A vector of length one giving the precision of the prediction}
@@ -66,36 +65,34 @@ Fawcet T. (2006). An introduction to ROC analysis. \emph{Pattern Recognition Let
 
 
 \examples{
-#10-dimensional example
-#loading data
-data(sefihy)
+# 2-dimensional example
+# loading data
+data(hacide)
 
-#imbalance on training set
-table(sefihy.train$cls)
+# imbalance on training set
+table(hacide.train$cls)
 
-#model estimation using logistic regression
-fit.sefihy  <- glm(cls~., data=sefihy.train, family="binomial")
+# model estimation using logistic regression
+fit.hacide  <- glm(cls~., data=hacide.train, family="binomial")
 
-#prediction on training set
-pred.sefihy.train <- predict(fit.sefihy, newdata=sefihy.train, type="response")
+# prediction on training set
+pred.hacide.train <- predict(fit.hacide, newdata=hacide.train,
+                             type="response")
 
-#compute accuracy measures (training set)
-accuracy.meas(sefihy.train$cls, pred.sefihy.train, threshold = 0.05)
+# compute accuracy measures (training set)
+accuracy.meas(hacide.train$cls, pred.hacide.train, threshold = 0.02)
 
-#imbalance on test set 
-table(sefihy.test$cls)
+# imbalance on test set 
+table(hacide.test$cls)
 
-#prediction on test set
-pred.sefihy.test <- predict(fit.sefihy, newdata=sefihy.test, type="response")
+# prediction on test set
+pred.hacide.test <- predict(fit.hacide, newdata=hacide.test,
+                            type="response")
 
-#compute accuracy measures (test set)
-accuracy.meas(sefihy.test$cls, pred.sefihy.test, threshold = 0.05)
+# compute accuracy measures (test set)
+accuracy.meas(hacide.test$cls, pred.hacide.test, threshold = 0.02)
 
 }
 
-
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
 \keyword{ supervised classification }
-%\keyword{ supervised classification }
-%\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+

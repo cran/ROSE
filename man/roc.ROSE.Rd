@@ -16,17 +16,17 @@ roc.curve(response, predicted, plotit = TRUE, add.roc = FALSE,
 \arguments{
   \item{response}{A vector of responses containing two classes to be used to compute the ROC curve. It can be of class \code{"factor"}, \code{"numeric"} 
 or \code{"character"}.}
-  \item{predicted}{A vector of class \code{"factor"}, \code{"numeric"} or \code{"character"}, containing the prediction for each observation.}
+  \item{predicted}{A vector containing a prediction for each observation. This can be of class \code{"factor"} or \code{"character"} if the predicted label classes are provided or \code{"numeric"} for the probabilities of the rare class (or a monotonic function of them).}
   \item{plotit}{Logical, if \code{TRUE} the ROC curve is plotted in a new window. Default value is set to \code{TRUE}.}
   \item{add.roc}{Logical, if \code{TRUE} the ROC curve is added to an existing window. Default value is set to \code{FALSE}.}
   \item{n.thresholds}{Number of \code{thresholds} at which the ROC curve is computed. 
 			Default value is the minimum between 100 and the number of elements in \code{response}. 
 	A value of \code{n.thresholds} greater than the length of \code{response} is ignored.}
-  \item{\dots}{Further arguments to be passed to \code{plot}.}
+  \item{\dots}{Further arguments to be passed either to \code{plot} or \code{lines}.}
 }
 
 \value{
-A list containing
+The value is an object of class \code{roc.curve} which has components
   \item{Call}{The matched call.}
   \item{auc}{The value of the area under the ROC curve.}\cr
   \item{false positive rate}{The false positive rate (or equivalently the complement of sensitivity) of the classifier at the evaluated \code{thresholds}.}
@@ -45,39 +45,35 @@ Fawcet T. (2006). An introduction to ROC analysis. \emph{Pattern Recognition Let
 }
 
 \examples{
-#10-dimensional example
-#loading data
-data(sefihy)
+# 2-dimensional example
+# loading data
+data(hacide)
 
-#check imbalance on training set
-table(sefihy.train$cls)
+# check imbalance on training set
+table(hacide.train$cls)
 
-#model estimation using logistic regression
-fit.sefihy  <- glm(cls~., data=sefihy.train, family="binomial")
+# model estimation using logistic regression
+fit.hacide  <- glm(cls~., data=hacide.train, family="binomial")
 
-#prediction on training set
-pred.sefihy.train <- predict(fit.sefihy, newdata=sefihy.train)
+# prediction on training set
+pred.hacide.train <- predict(fit.hacide, newdata=hacide.train)
 
-#plot the ROC curve (training set)
-roc.curve(sefihy.train$cls, pred.sefihy.train, 
-          main="ROC curve \n (Semi filled hypersphere data)")
+# plot the ROC curve (training set)
+roc.curve(hacide.train$cls, pred.hacide.train, 
+          main="ROC curve \n (Half circle depleted data)")
 
-#check imbalance on test set 
-table(sefihy.test$cls)
+# check imbalance on test set 
+table(hacide.test$cls)
 
-#prediction using test set
-pred.sefihy.test <- predict(fit.sefihy, newdata=sefihy.test)
+# prediction using test set
+pred.hacide.test <- predict(fit.hacide, newdata=hacide.test)
 
-#add the ROC curve (test set)
-roc.curve(sefihy.test$cls, pred.sefihy.test, add=TRUE, col=2, 
+# add the ROC curve (test set)
+roc.curve(hacide.test$cls, pred.hacide.test, add=TRUE, col=2, 
           lwd=2, lty=2)
 legend("topleft", c("Resubstitution estimate", "Holdout estimate"), 
         col=1:2, lty=1:2, lwd=2)
 }
 
-
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
 \keyword{ supervised classification }
-%\keyword{ supervised classification }
-%\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+
