@@ -13,8 +13,9 @@ described in Menardi and Torelli (2013).
 
 \usage{
  
-ROSE(formula, data, N, p=0.5, hmult.majo=1, hmult.mino=1, subset,
-     na.action, seed)
+ROSE(formula, data, N, p=0.5, hmult.majo=1, hmult.mino=1, 
+     subset=options("subset")$subset,
+     na.action=options("na.action")$na.action, seed)
 }
 
 \arguments{
@@ -47,6 +48,7 @@ kernel density of the minority class. See ``References'' and ``Details''.
 }
    \item{subset}{
 An optional vector specifying a subset of observations to be used in the sampling process.
+The default is set by the \code{\link{subset}} setting of \code{\link{options}}.
  } 
  \item{na.action}{
  A function which indicates what should happen when the data contain 'NA's.  
@@ -59,30 +61,22 @@ A single value, interpreted as an integer, recommended to specify seeds and keep
 }
 
 \details{
-ROSE (Random Over-Sampling Examples) is a smoothed-bootstrap based technique 
-which aids the task of binary classification in the presence of rare classes.
-ROSE produces a synthetic, possibly balanced, sample of data by simulating 
-new examples from a kernel estimate of the conditional density
-of the two classes. 
+ROSE (Random Over-Sampling Examples) aids the task of binary classification in the presence of rare classes. It produces a synthetic, possibly balanced, sample of data simulated according to a smoothed-bootstrap approach. 
 
-Denoted as \eqn{y} the binary response and as \eqn{\bold{x}} a vector 
+Denoted by \eqn{y} the binary response and by \eqn{x} a vector 
 of numeric predictors observed on \eqn{n} subjects \eqn{i,} (\eqn{i=1, \ldots, n}), 
-syntethic examples with label class \eqn{k, (k=0, 1)} are generated from:
-
-\deqn{
-\hat{f}(\bold{x}|y = k) = \sum_{i: y_i=k} \frac{1}{\# i: y_i=k} K_{H_k} (\bold{x}- \bold{x}_i)  
-}
-
-where \eqn{K} is a Normal product kernel centered at \eqn{\bold{x_i}} with
+syntethic examples with class label \eqn{k, (k=0, 1)} are generated from
+a kernel estimate of the conditional density \eqn{f(x|y = k)}.
+The kernel is a Normal product function centered at each of the \eqn{x_i} with
 diagonal covariance matrix \eqn{H_k}. Here, \eqn{H_k} is the asymptotically optimal
 smoothing matrix under the assumption of multivariate normality. See ``References''
 below and further references therein.
 
-Essentially, ROSE selects observed data belonging to the class \eqn{k} 
-and generates new examples in its neighborhood, 
-where the width of the neighborhood is determined by \eqn{H_k}. The user is allowed to 
+Essentially, ROSE selects an observation belonging to the class \eqn{k} 
+and generates new examples in its neighbourhood, 
+where the width of the neighbourhood is determined by \eqn{H_k}. The user is allowed to 
 shrink \eqn{H_k} by varying arguments \code{h.mult.majo} and \code{h.mult.mino}.  
-Balancement is regulated by argument \code{p}, namely to the probability of 
+Balancement is regulated by argument \code{p}, i.e. the probability of 
 generating examples from class \eqn{k=1}.
 
 As they stand, kernel-based methods may be applied to continuous data only.
@@ -101,8 +95,9 @@ The value is an object of class \code{ROSE} which has components
 }
 
 \references{
-Menardi, G. and Torelli, N. (2013). Training and assessing classification rules with imbalanced data. \emph{Data Mining and Knowledge Discovery
-}, DOI:10.1007/s10618-012-0295-5, to appear.
+Lunardon, N., Menardi, G., and Torelli, N. (2014). ROSE: a Package for Binary Imbalanced Learning. \emph{R Jorunal}, 6:82--92.
+
+Menardi, G. and Torelli, N. (2014). Training and assessing classification rules with imbalanced data. \emph{Data Mining and Knowledge Discovery}, 28:92--122.
 }
 
 \section{Warning}{
@@ -114,9 +109,7 @@ In the current version \code{ROSE} discards possible interactions and transforma
 The automatic parsing of \code{formula} is able to manage virtually all cases on which it has been tested it but 
 the user is warned to use caution in the specification of entangled functions of predictors. 
 Any report about possible malfunctioning of the parsing mechanism is welcome.
-
 }
-
 
 \seealso{
 \code{\link{ovun.sample}}, \code{\link{ROSE.eval}}.

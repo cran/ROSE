@@ -18,19 +18,17 @@ Data represent 2 real features (denoted as \code{x1, x2}) and a binary label cla
 
 
 Data have been simulated as follows:
-\deqn{
-(\mbox{\code{x1, x2, cls}) s.t.}
-\left \{ \begin{array}{ll}
-\mbox{\code{x1, x2}} \sim \mathbf{N}_{2} \left(\mathbf{0}_{2}, (1/4, 1) \mathbf{I}_{2}\right) & \mbox{ if \code{cls} }=0 \\
-\mbox{\code{x1, x2}} \sim \mathbf{N}_{2} \left(\mathbf{0}_{2}, \mathbf{I}_{2}\right) \cap \left\|\mathbf{x}\right\|^2>4 \cap x_2 \leq 0 &\mbox{  if \code{cls} }=1\\
-\end{array}\right. 
+\describe{
+\item{-}{if \code{cls} = 0 then \code{(x1, x2)}\eqn{\sim \mathbf{N}_{2} \left(\mathbf{0}_{2}, (1/4, 1) \mathbf{I}_{2}\right)}}
+\item{-}{if \code{cls} = 1 then \code{(x1, x2)}\eqn{\sim \mathbf{N}_{2} \left(\mathbf{0}_{2}, \mathbf{I}_{2}\right) \cap \left\|\mathbf{x}\right\|^2>4 \cap x_2 \leq 0}}
+}
 }
 
+\references{
+Lunardon, N., Menardi, G., and Torelli, N. (2014). ROSE: a Package for Binary Imbalanced Learning. \emph{R Jorunal}, 6:82--92.
+
+Menardi, G. and Torelli, N. (2014). Training and assessing classification rules with imbalanced data. \emph{Data Mining and Knowledge Discovery}, 28:92--122.
 }
-
-
-
-\references{Menardi, G. and Torelli, N. (2013). Training and assessing classification rules with imbalanced data. \emph{Data Mining and Knowledge Discovery}, DOI:10.1007/s10618-012-0295-5, to appear.}
 
 \examples{
 data(hacide)

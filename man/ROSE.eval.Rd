@@ -12,7 +12,9 @@ cross-validation estimates of a specified accuracy measure.
 ROSE.eval(formula, data, learner, acc.measure="auc", extr.pred=NULL, 
           method.assess="holdout", K=1, B=100, control.rose=list(),
           control.learner=list(), control.predict=list(), 
-          control.accuracy=list(), trace=FALSE, subset, na.action, seed)}
+          control.accuracy=list(), trace=FALSE, 
+          subset=options("subset")$subset, 
+          na.action=options("na.action")$na.action, seed)}
 \arguments{
   \item{formula}{ 
 	An object of class \code{\link{formula}} (or one that can be coerced to that class). 
@@ -75,10 +77,11 @@ selected accuracy measure. \code{"BOOT"} estimates the accuracy measure by fitti
   }
   \item{subset}{
  An optional vector specifying a subset of observations to be used in the sampling and learning process.
+The default is set by the \code{\link{subset}} setting of \code{\link{options}}.
  } 
  \item{na.action}{
  A function which indicates what should happen when the data contain 'NA's.  
- The default is set by the 'na.action' setting of 'options'.
+The default is set by the \code{\link{na.action}} setting of \code{\link{options}}.
 }
   \item{seed}{
 A single value, interpreted as an integer, recommended to specify seeds and keep trace of the generated ROSE 
@@ -97,7 +100,7 @@ and its estimation is then regulated by argument \code{control.rose}.
 A default setting of the arguments (that is, \code{p=0.5}) entails the estimation of the learner accuracy 
 conditional to a balanced training set. In order to estimate the accuracy of a learner fitted on unbalanced data, 
 the user may set argument \code{p} of \code{control.rose} to the proportion of
-positive examples in the observed sample. See Example 2 below and, for further details, Menardi and Torelli (2013).
+positive examples in the observed sample. See Example 2 below and, for further details, Menardi and Torelli (2014).
  
 To the aim of a grater flexibility, \code{ROSE.eval} is not linked to the use of a specific learner and works virtually with any classifier. 
 The actual implementation supports the following two type of \code{learner}.
@@ -122,8 +125,9 @@ estimator.}
 }
 
 \references{
-Menardi, G. and Torelli, N. (2013). Training and assessing classification rules with imbalanced data. \emph{Data Mining and Knowledge Discovery
-}, DOI:10.1007/s10618-012-0295-5, to appear.
+Lunardon, N., Menardi, G., and Torelli, N. (2014). ROSE: a Package for Binary Imbalanced Learning. \emph{R Jorunal}, 6:82--92.
+
+Menardi, G. and Torelli, N. (2014). Training and assessing classification rules with imbalanced data. \emph{Data Mining and Knowledge Discovery}, 28:92--122.
 }
 
 \section{Note}{

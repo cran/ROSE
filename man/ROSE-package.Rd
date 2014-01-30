@@ -7,7 +7,7 @@ ROSE: Random Over-Sampling Examples}
 \description{
 The package provides functions to deal with binary classification
   problems in the presence of imbalanced classes. Synthetic balanced samples are  
-  generated according to ROSE (Menardi and Torelli, 2013).  
+  generated according to ROSE (Menardi and Torelli, 2014).  
   Functions that implement more traditional remedies to the class imbalance
   are also provided, as well as different metrics to evaluate a learner accuracy.
   These are estimated by holdout, bootrstrap or cross-validation methods. 
@@ -39,11 +39,12 @@ The package provides functions to deal with binary classification
 Nicola Lunardon, Giovanna Menardi, Nicola Torelli
 
 Maintainer:
-Nicola Lunardon <nicola.lunardon@econ.units.it>
+Nicola Lunardon <lunardon@stat.unipd.it>
 }
 \references{
-Menardi, G. and Torelli, N. (2013). Training and assessing classification rules with imbalanced data. \emph{Data Mining and Knowledge Discovery
-}, DOI:10.1007/s10618-012-0295-5, to appear.
+Lunardon, N., Menardi, G., and Torelli, N. (2014). ROSE: a Package for Binary Imbalanced Learning. \emph{R Jorunal}, 6:82--92.
+
+Menardi, G. and Torelli, N. (2014). Training and assessing classification rules with imbalanced data. \emph{Data Mining and Knowledge Discovery}, 28:92--122.
 }
 %~~ Optionally other standard keywords, one per line, from file KEYWORDS in ~~
 %~~ the R documentation directory ~~

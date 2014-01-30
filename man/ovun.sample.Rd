@@ -9,8 +9,9 @@ Creates possibly balanced samples by random over-sampling minority examples, und
 }
 
 \usage{
-ovun.sample(formula, data, method="both", N, p=0.5, subset, 
-            na.action, seed)
+ovun.sample(formula, data, method="both", N, p=0.5, 
+            subset=options("subset")$subset,
+            na.action=options("na.action")$na.action, seed)
 }
 
 \arguments{
@@ -31,23 +32,23 @@ An object of class \code{\link{formula}} (or one that can be coerced to that cla
 }
   \item{N}{
  The desired sample size of the resulting data set. 
- If missing and \code{method} is either \code{"over"} or \code{"under"} the sample size is determined by oversampling 
- or, respectively, undersampling examples so that the minority class occurs approximately in proportion \code{p}. 
- When \code{method = "both"} the argument is compulsory, with default value given by the length of vectors 
+ If missing and \code{method} is either \code{"over"} or \code{"under"} the sample size is determined by oversampling or, respectively, undersampling examples so that the minority class occurs approximately in proportion \code{p}. 
+ When \code{method = "both"} the default value is given by the length of vectors 
  specified in \code{formula}. 
 }
  \item{p}{
  The probability of resampling from the rare class.
  If missing and \code{method} is either \code{"over"} or \code{"under"} this proportion is determined by oversampling 
  or, respectively, undersampling examples so that the sample size is equal to \code{N}. 
- When \code{method ="both"} the argument is compulsory with default value given by 0.5.
+ When \code{method ="both"} the default value given by 0.5.
 }
- \item{subset}{
- An optional vector specifying a subset of observations to be used in the sampling process.
+   \item{subset}{
+An optional vector specifying a subset of observations to be used in the sampling process.
+The default is set by the \code{\link{subset}} setting of \code{\link{options}}.
  } 
  \item{na.action}{
  A function which indicates what should happen when the data contain 'NA's.  
- The default is set by the 'na.action' setting of 'options'.
+ The default is set by the \code{\link{na.action}} setting of \code{\link{options}}.
 }
   \item{seed}{
 A single value, interpreted as an integer, recommended to specify seeds and keep trace of the  

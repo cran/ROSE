@@ -2,21 +2,19 @@ citHeader("To cite the ROSE package in publications use:")
 
 if(!exists("meta") || is.null(meta)) meta <- packageDescription("ROSE")
 
-citEntry(entry="manual",
-	title = paste("{R} package \\texttt{ROSE}: ",
-	" Random Over-Sampling Examples (version ", meta$Version, ")", sep=""),
-	author = personList( as.person("N. Lunardon"),
-	                     as.person("G. Menardi"),
-			         		as.person("N. Torelli")),
-	address = c("Universit\\`a di Trieste, Italia", "Universit\\`a di Padova, Italia"),
-	year = substr(meta$Date, 1, 4),
-	url = "http://cran.r-project.org/web/packages/ROSE/index.html",
-	textVersion = 
-	paste("Lunardon, N., Menardi, G., Torelli, N.  (", substr(meta$Date, 1, 4), "). ",
-"R package 'ROSE': Random Over-Sampling Examples", " (version ", meta$Version, "). ",
-"URL http://cran.r-project.org/web/packages/ROSE/index.html",
-sep="")
+citEntry(entry = "Article",
+  title        = "{ROSE}: a {P}ackage for {B}inary {I}mbalanced {L}earning",
+  author       = personList(as.person("Nicola Lunardon"),
+                            as.person("Giovanna Menardi"),
+                            as.person("Nicola Torelli")),
+  journal      = "{R} Journal",
+  year         = "2014",
+  volume       = "6",
+  number       = "1",
+  pages        = "82--92",
+
+  textVersion  =
+  paste("Nicola Lunardon, Giovanna Menardi, and Nicola Torelli (2014).",
+        "ROSE: a Package for Binary Imbalanced Learning.",
+        "R Journal, 6(1), 82-92.")
 )
-
-
- 
