@@ -23,4 +23,7 @@ S3method(print, summary.ROSE)
 S3method(print, ROSE.eval)
 S3method(summary, ROSE.eval)
 S3method(print, summary.ROSE.eval)
-importFrom(utils, head, tail, packageDescription)
+importFrom(utils, head, tail, packageDescription, methods)
+importFrom(graphics, abline, lines, plot)
+importFrom(stats, as.formula, model.frame, predict, rbinom, rnorm, sd, terms)
+
